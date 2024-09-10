@@ -1,21 +1,17 @@
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const app = express();
 const connectDB = require("./utils/db");
 const userRoutes = require("./routes/userRoutes");
 
 connectDB();
-require("./googleAuth");
+require("./config/googleAuth");
 
 app.use(express.json());
-function isLoggedIn(req, res, next) {
-    if (req.isAuthenticated()) {
-      return next();
-    }
-    res.sendStatus(401); // Unauthorized
-  }
+app.use(cookieParser());
 app.use(
   session({
     secret: "keyboard",
@@ -27,33 +23,37 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// app.use("/", (req, res) => {
-//   res.sendFile(path.join(__dirname, "client", "index.html"));
-// });
-
-app.use("/api", userRoutes);
-
 app.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["email", "profile"] })
+  passport.authenticate("google", { scope: ["profile","email"] })
 );
 
 app.get(
   "/auth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: "/auth/protected",
-    failureRedirect: "/auth/google/failure",
-  })
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function (req, res) {
+    // Successful authentication, redirect home.
+    res.redirect("/success");
+  }
 );
 
-app.get("/auth/protected",isLoggedIn, (req, res) => {
-  let name = req.name.displayName;
-  res.send(`You have successfully authenticated with Google! ${name}`);
-});
+// app.use("/", (req, res) => {
+//   res.sendFile(path.join(__dirname, "client", "index.html"));
+// });
+//**  LinkedIn Auth
+app.get('/auth/linkedin',
+  passport.authenticate('linkedin'),
+  function(req, res){
+    // The request will be redirected to LinkedIn for authentication, so this
+    // function will not be called.
+  });
 
-app.get("/auth/google/failure", (req, res) => {
-  res.send("something went wrong!");
-});
+app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
+  successRedirect: '/',
+  failureRedirect: '/login'
+}));
+
+app.use("/api", userRoutes);
 
 const port = 5000 || process.env.PORT;
 

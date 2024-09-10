@@ -21,12 +21,11 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required!"],
       minlength: [8, "Password must be at least 8 characters!"],
       validate: {
         validator: function (value) {
           // Regular expression to match the password rules
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\(\)])[A-Za-z\d@$!%*?&_\(\)]{8,}$/.test(
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\(\)\-\+=\^~])[A-Za-z\d@$!%*?&_\(\)\-\+=\^~]{8,}$/.test(
             value
           );
         },
@@ -34,33 +33,29 @@ const userSchema = mongoose.Schema(
           "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character!",
       },
     },
-    reenterPassword: {
+    role: {
       type: String,
-      required: [true, "Please re-enter your password!"],
+      enum: ['super-admin', 'admin', 'operator','member'], 
+      default: 'super-admin',
     },
     is_verified: {
       type: Boolean,
       default: false,
     },
+    googleId: { type: String, unique: true },
   },
   { timestamps: true }
 );
-// Custom validation for reenterPassword
-userSchema.pre("validate", function (next) {
-  if (this.password !== this.reenterPassword) {
-    this.invalidate("reenterPassword", "Passwords must match!");
-  }
-  next();
-});
 
 userSchema.pre("save", async function (next) {
-  try {
-    const salt = await bcrypt.genSalt();
-    this.password = await bcrypt.hash(this.password, salt);
-    this.reenterPassword = await bcrypt.hash(this.reenterPassword, salt);
-    next();
-  } catch (error) {
-    next(error);
+  if (this.password) {
+    try {
+      const salt = await bcrypt.genSalt();
+      this.password = await bcrypt.hash(this.password, salt);
+      next();
+    } catch (error) {
+      next(error);
+    }
   }
 });
 

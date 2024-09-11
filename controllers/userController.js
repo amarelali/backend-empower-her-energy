@@ -1,23 +1,29 @@
 const User = require("../models/userModel");
+const UserTokens = require("../models/userTokensModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+const generateToken = async (userId, withRemember) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+    expiresIn: withRemember ? "30d" : "1h",
+  });
+};
 const register = async (req, res) => {
-  if(req.body.password != req.body.reenterPassword){
+  if (req.body.password != req.body.reenterPassword) {
     return res.status(400).send({
       success: false,
       message: "Passwords must match!",
-    }); 
+    });
   }
   try {
     const user = await User.create(req.body);
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       user,
     });
   } catch (e) {
-    res.status(400).send({
+    return res.status(400).send({
       success: false,
       message: e.message,
     });
@@ -34,17 +40,6 @@ const login = async (req, res) => {
         message: "User not found",
       });
     }
-    // generate token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: rememberMe ? "30d" : "1h",
-    });
-    console.log(token);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000,
-    });
-
     // Check if the password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -53,22 +48,37 @@ const login = async (req, res) => {
         message: "Invalid credentials",
       });
     }
-
-    // If valid, create a session and respond with user data
-    req.login(user, (err) => {
-      if (err) {
-        return res.status(500).send({
-          success: false,
-          message: "Failed to log in",
+    const tokenExist = await UserTokens.findOne({ user_id: user._id });
+    const expiresAt = new Date(
+      Date.now() + (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000)
+    );
+    let token;
+    if (tokenExist && Date.now() < tokenExist.expiresAt) { // token exist and still valid so we update the expiration date
+      tokenExist.expiresAt = expiresAt;
+      await tokenExist.save();
+      token = tokenExist.token;
+    } else {
+      token = await generateToken(user._id, rememberMe);
+      if (tokenExist) { // token exist but date.now > epires date of token, that's why we need to update token with expiration date
+        tokenExist.token = token;
+        tokenExist.expiresAt = expiresAt;
+        await tokenExist.save();
+      } else {
+        await UserTokens.create({
+          user_id: user._id,
+          token,
+          expiresAt,
         });
       }
-      res.status(200).send({
-        success: true,
-        user,
-      });
+    }
+    return res.status(200).send({
+      success: true,
+      user,
+      token,
+      expiresAt,
     });
   } catch (e) {
-    res.status(400).send({
+    return res.status(400).send({
       success: false,
       message: e.message,
     });

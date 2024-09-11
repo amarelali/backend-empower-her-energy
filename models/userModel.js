@@ -35,12 +35,21 @@ const userSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['super-admin', 'admin', 'operator','member'], 
+      enum: ['super-admin', 'admin', 'operator','member','mentor'], 
       default: 'super-admin',
     },
     is_verified: {
       type: Boolean,
       default: false,
+    },
+    is_approved: {
+      type: Boolean,
+      default: false,
+    },
+    status:{
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
     googleId: { type: String, unique: true },
   },

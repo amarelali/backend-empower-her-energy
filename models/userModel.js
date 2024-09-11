@@ -51,7 +51,7 @@ const userSchema = mongoose.Schema(
       enum: ['active', 'inactive'],
       default: 'active',
     },
-    googleId: { type: String, unique: true },
+    googleId: { type: String, unique: true ,sparse: true},
   },
   { timestamps: true }
 );
@@ -67,6 +67,8 @@ userSchema.pre("save", async function (next) {
     }
   }
 });
+
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 const UserModel = mongoose.model("User", userSchema);
 

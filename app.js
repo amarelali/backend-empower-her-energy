@@ -1,7 +1,6 @@
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
-const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const app = express();
 const connectDB = require("./utils/db");
@@ -11,7 +10,6 @@ connectDB();
 require("./config/googleAuth");
 
 app.use(express.json());
-app.use(cookieParser());
 app.use(
   session({
     secret: "keyboard",
@@ -25,7 +23,7 @@ app.use(passport.session());
 
 app.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["profile","email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
 app.get(
@@ -40,19 +38,6 @@ app.get(
 // app.use("/", (req, res) => {
 //   res.sendFile(path.join(__dirname, "client", "index.html"));
 // });
-//**  LinkedIn Auth
-app.get('/auth/linkedin',
-  passport.authenticate('linkedin'),
-  function(req, res){
-    // The request will be redirected to LinkedIn for authentication, so this
-    // function will not be called.
-  });
-
-app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
-  successRedirect: '/',
-  failureRedirect: '/login'
-}));
-
 app.use("/api", userRoutes);
 
 const port = 5000 || process.env.PORT;

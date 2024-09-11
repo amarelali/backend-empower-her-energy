@@ -1,7 +1,7 @@
 const passport = require("passport");
 require("dotenv").config();
 const User = require("../models/userModel");
-
+const UserToken = require("../models/userTokensModel");
 var GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 passport.use(
@@ -22,23 +22,31 @@ passport.use(
             firstName: name.givenName,
             lastName: name.familyName,
             email: profile.emails[0].value,
-            is_verified:profile.emails[0].verified
+            is_verified: profile.emails[0].verified,
           }).save();
+          await UserToken.create({
+            user_id: user._id,
+            token: accessToken,
+          });
+        }else{
+          await UserToken.findOneAndUpdate(
+            { user_id: user._id },  
+            { token: accessToken, expiresAt: Date.now() + 3600000 },
+            { upsert: true } 
+          );
         }
         done(null, user);
       } catch (err) {
         done(err, null);
       }
-      console.log("accessToken", accessToken);
       done(null, profile);
     }
   )
 );
 
-
 passport.serializeUser((user, done) => {
   // Serialize the user ID into the session
-  console.log("serializeUser",user);
+  console.log("serializeUser", user);
   done(null, user.id);
 });
 
@@ -46,7 +54,7 @@ passport.deserializeUser(async (id, done) => {
   try {
     // Find the user by ID
     const user = await User.findById(id);
-    console.log("deserializeUser",user);
+    console.log("deserializeUser", user);
     done(null, user);
   } catch (err) {
     done(err, null);

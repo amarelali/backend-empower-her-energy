@@ -6,7 +6,10 @@ const tierSchema = mongoose.Schema(
       type: String,
     },
     price:{
-      type: String, // price as string or a number with currency string property?
+      type: Number, 
+    },
+    currency:{
+      type:String
     },
     benefits:{
         type: String, 

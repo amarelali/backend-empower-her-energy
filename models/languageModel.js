@@ -8,6 +8,10 @@ const languageSchema = mongoose.Schema(
     language_code:{
       type: String,
       unique: true,
+    },
+    is_active:{
+      type: Boolean,
+      default: false,
     }
   },
   { timestamps: true }

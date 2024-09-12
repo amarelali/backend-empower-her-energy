@@ -5,6 +5,7 @@ const passport = require("passport");
 const app = express();
 const connectDB = require("./utils/db");
 const userRoutes = require("./routes/userRoutes");
+const tierRoutes = require("./routes/tierRoutes");
 
 connectDB();
 require("./config/googleAuth");
@@ -39,6 +40,7 @@ app.get(
 //   res.sendFile(path.join(__dirname, "client", "index.html"));
 // });
 app.use("/api", userRoutes);
+app.use("/api", tierRoutes);
 
 const port = 5000 || process.env.PORT;
 

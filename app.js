@@ -6,7 +6,7 @@ const app = express();
 const connectDB = require("./utils/db");
 const userRoutes = require("./routes/userRoutes");
 const tierRoutes = require("./routes/tierRoutes");
-
+const languageRoutes = require("./routes/languageRoutes");
 connectDB();
 require("./config/googleAuth");
 
@@ -41,6 +41,7 @@ app.get(
 // });
 app.use("/api", userRoutes);
 app.use("/api", tierRoutes);
+app.use("/api", languageRoutes);
 
 const port = 5000 || process.env.PORT;
 

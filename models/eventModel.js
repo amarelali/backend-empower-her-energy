@@ -38,7 +38,7 @@ const eventSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Language",
     },
-    ticket_id: {
+    ticket_id: { //?
       type: mongoose.Schema.Types.ObjectId,
       ref: "Ticket",
     },
